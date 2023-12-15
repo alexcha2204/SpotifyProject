@@ -1,15 +1,17 @@
 import spotipy
 import time
-from datetime import datetime, timezone
+from datetime import datetime
 from spotipy.oauth2 import SpotifyOAuth
 from spotipy.exceptions import SpotifyException
 from flask import Flask, request, url_for, session, redirect
 from azure.storage.blob import BlobServiceClient
+from collections import defaultdict
 import pandas as pd
+import json
 
 spotifyApp = Flask(__name__)
 spotifyApp.config['SESSION_COOKIE_NAME'] = 'Release Radar Cookie'
-spotifyApp.secret_key = 'ehfuhrv&@98#8b976fvt$52'
+spotifyApp.secret_key = 'YOUR_SECRET_KEY'
 TOKEN_INFO = 'token_info'
 
 @spotifyApp.route('/')
@@ -36,6 +38,7 @@ def release_radar_clone():
 
     sp = spotipy.Spotify(auth=token_info['access_token'])
     artists_details = {}
+    all_genres = defaultdict(list)
     delay_time = 2
 
     batch_size = 50
@@ -63,10 +66,24 @@ def release_radar_clone():
                 print(f"Spotify API error: {e}")
                 break
 
-    data = pd.DataFrame.from_dict(artists_details, orient='index')
+    artist_ids = [artist['artist_id'] for artist in artists_details]
+    artist_ids_length = len(artist_ids)
+    for start in range (0, artist_ids_length, batch_size):
+        end = start + batch_size
+        chunk_of_artist_ids = artist_ids[start:end]
+        artists_info = sp.artists(chunk_of_artist_ids)['artists']
+
+        for artist_info in artists_info:
+            artist_name = artist_info['name']
+            artist_genres = artist_info['genres']
+            for genre in artist_genres:
+                all_genres[genre].append(artist_name)
+
+    json_data = json.dumps(all_genres)
+    music_data = pd.DataFrame.from_dict(artists_details, orient='index')
    
-    connection_string = "DefaultEndpointsProtocol=https;AccountName=releaseradarclone;AccountKey=7+aZMfOEpMigNFdZU5BLGM9BSZqhnJLGO7WOkctR2tMS+izjgplPko6O5BTU0q1+1Ih4C49Z5EfB+AStWRg0/Q==;EndpointSuffix=core.windows.net"  # or sas_token
-    container_name = "music-data"
+    connection_string = "YOUR_CONNECTION_STRING"
+    container_name = "CONTAINER_NAME"
 
     blob_service_client = BlobServiceClient.from_connection_string(connection_string)
     container_client = blob_service_client.get_container_client(container_name)
@@ -74,11 +91,14 @@ def release_radar_clone():
     if not container_client.exists():
         container_client.create_container()
 
-    data.to_csv('music_data.csv', index=False)
+    music_data.to_csv('music_data.csv', index=False)
     with open('music_data.csv', "rb") as data:
         blob_client = container_client.get_blob_client("music_data.csv")
         blob_client.upload_blob(data, overwrite=True)
 
+    blob_client = container_client.get_blob_client("genres.json")
+    blob_client.upload_blob(json_data, overwrite=True)
+    
     return "IT WORKS"
 
 def artist_details_dictionary(artist_name: str, artist_id: str, first_added: datetime, first_song: str, first_album: str, first_album_type: str,
@@ -105,6 +125,7 @@ def get_song_data(artists_details: dict, song: dict):
     song_name = song['track']['name']
     album_name = song['track']['album']['name']
     album_type = song['track']['album']['album_type']
+
     date_added = datetime.fromisoformat(date_added)
 
     for artist in artist_list:
@@ -152,8 +173,8 @@ def get_token():
     return token_info
 
 def create_spotify_oauth():
-    return SpotifyOAuth(client_id = "c453297c655645b9a6deac19b000ac81",
-                        client_secret = "370a6b35d2c8443eb2dbe324af8d1291",
+    return SpotifyOAuth(client_id = 'YOUR_CLIENT_ID',
+                        client_secret = 'YOUR_CLIENT_SECRET',
                         redirect_uri = url_for('redirect_page', _external=True),
                         scope = 'user-library-read playlist-modify-public playlist-modify-private user-read-recently-played playlist-read-private user-top-read')
 
