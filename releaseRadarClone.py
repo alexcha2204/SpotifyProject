@@ -66,7 +66,7 @@ def release_radar_clone():
 
     user_genres = get_genre_mapping(sp, user_songs)
 
-    upload_music_data_to_azure(user_genres, user_songs)
+    upload_music_data_locally(user_genres, user_songs)
     
     return "IT WORKS"
 
@@ -95,36 +95,28 @@ def get_genre_mapping(sp: spotipy.Spotify, user_data: dict):
                genres_artists_pairs[genre].append(artist_name)
 
     return genres_artists_pairs
-            
-def upload_music_data_to_azure(genres_dict: dict, artists_dict: dict):
+
+def upload_music_data_locally(sp: spotipy.Spotify, genres_dict: dict, artists_dict: dict):
     
-    # converting dictionaries to json/dataframe so it can be stored in Azure
-    genres_json = json.dumps(genres_dict)
+    # converting dictionaries to json/dataframe 
+
     artist_df = pd.DataFrame.from_dict(artists_dict, orient='index')
    
-   # establishing connections to client
-    connection_string = "CONNECTION_STRING"
-    container_name = "CONTAINER_NAME"
+    username = get_spotify_username(sp)
 
-    blob_service_client = BlobServiceClient.from_connection_string(connection_string)
-    container_client = blob_service_client.get_container_client(container_name)
+    # save artists data to a csv file
+    csv_filename = f"music_data_{username}.csv"
+    json_filename = f"genres_{username}.json"
 
-    if not container_client.exists():
-        container_client.create_container()
+    artist_df.to_csv(csv_filename, index=False)
 
-    # save artists data to a csv file and save it to azure
-    artist_df.to_csv('music_data.csv', index=False)
-    with open('music_data.csv', "rb") as data:
-        blob_client = container_client.get_blob_client("music_data.csv")
-        blob_client.upload_blob(data, overwrite=True)
-
-    # uploading json file to azure 
-    blob_client = container_client.get_blob_client("genres.json")
-    blob_client.upload_blob(genres_json, overwrite=True)
+    # Assuming 'genres_json' is your JSON data
+    with open(json_filename, 'w') as json_file:
+        json.dump(genres_dict, json_file, indent=4)
 
 def artists_data_dictionary(artist_name: str, artist_id: str, first_added: datetime, first_song: str, first_album: str, first_album_type: str,
-                              last_added: datetime, last_song: str, last_album: str, last_album_type: str, num_songs_main: int, num_songs_feature: int, liked_songs: int):
-    
+                              last_added: datetime, last_song: str, last_album: str, last_album_type: str, num_songs_main: int, num_songs_feature: int, liked_songs: int,
+                              genres_count: int):
     return {
         "artist_name": artist_name,
         "artist_id" : artist_id, 
@@ -138,9 +130,10 @@ def artists_data_dictionary(artist_name: str, artist_id: str, first_added: datet
         "last_album_type": last_album_type,
         "main_songs_count" : num_songs_main, 
         "featured_songs_count" : num_songs_feature, 
-        "liked_songs_count" : liked_songs}
+        "liked_songs_count" : liked_songs,
+        "genres_count": genres_count}
 
-def get_song_data(artists_data: dict, song: dict):
+def get_song_data(sp: spotipy.Spotify, artists_data: dict, song: dict):
 
     artists = song['track']['artists']
     date_added = datetime.fromisoformat(song['added_at'])
@@ -151,18 +144,20 @@ def get_song_data(artists_data: dict, song: dict):
     for artist in artists:
         artist_name = artist['name']
         artist_id = artist['id']
-        
+
         if artist_name not in artists_data:
+            genres = sp.artist(artist_id)['genres']
+            genres_count = len(genres)
             artists_data[artist_name] = artists_data_dictionary(artist_name, artist_id, 
                                                                      date_added, song_name, album_name, album_type,
-                                                                     date_added, song_name, album_name, album_type, 0,0,0)
+                                                                     date_added, song_name, album_name, album_type, 0,0,0, genres_count)
         
         if artist_name == artists[0]['name']:
             artists_data[artist_name]["main_songs_count"] += 1
         else:
-            artists_data[artist_name]["featured_on"] += 1
+            artists_data[artist_name]["featured_songs_count"] += 1
 
-        artists_data[artist_name]['amount_of_liked_songs'] += 1
+        artists_data[artist_name]["liked_songs_count"] += 1
         
         # keeps track of the earliest and latest songs liked by an artist 
         if date_added > artists_data[artist_name]['last_added']:
@@ -175,7 +170,7 @@ def get_song_data(artists_data: dict, song: dict):
             artists_data[artist_name]['first_added'] = date_added
             artists_data[artist_name]['first_song'] = song_name
             artists_data[artist_name]['first_album'] = album_name
-            artists_data[artist_name]['first_album_type'] = album_type
+            artists_data[artist_name]['first_album_type'] = album_type 
 
 def get_token():
     token_info = session.get(TOKEN_INFO, None)
@@ -188,8 +183,23 @@ def get_token():
     if is_expired:
         spotify_oauth = create_spotify_oauth()
         token_info = spotify_oauth.refresh_access_token(token_info['refresh_token'])
+
+    with open('token.txt', 'w') as token_file:
+        token_file.write(token_info['access_token'])
     
     return token_info
+
+def get_spotify_username(sp: spotipy.Spotify) -> str:
+
+    try:
+        user_info = sp.current_user()
+        username = user_info['id']
+        return username
+    
+    except SpotifyException as e:
+        print(f"Error getting Spotify username: {e}")
+        return None
+
 
 def create_spotify_oauth():
     return SpotifyOAuth(client_id = 'YOUR_CLIENT_ID',
@@ -199,3 +209,4 @@ def create_spotify_oauth():
 
 if __name__ == '__main__':
     spotifyApp.run(debug=True, port=5000)
+
