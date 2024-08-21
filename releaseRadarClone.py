@@ -10,7 +10,7 @@ import json
 
 spotifyApp = Flask(__name__)
 spotifyApp.config['SESSION_COOKIE_NAME'] = 'Release Radar Cookie'
-spotifyApp.secret_key = 'ehfuhrv&@98#8b976fvt$52'
+spotifyApp.secret_key = 'SECRET_KEY'
 DELAY_TIME = 2
 BATCH_SIZE = 50
 TOKEN_INFO = 'token_info'
@@ -252,8 +252,8 @@ def get_spotify_username(sp: spotipy.Spotify):
         return None
 
 def create_spotify_oauth():
-    return SpotifyOAuth(client_id = "c453297c655645b9a6deac19b000ac81",
-                        client_secret = "370a6b35d2c8443eb2dbe324af8d1291",
+    return SpotifyOAuth(client_id = "CLIENT_ID",
+                        client_secret = "CLIENT_SECRET",
                         redirect_uri = url_for('redirect_page', _external=True),
                         scope = 'user-library-read playlist-modify-public playlist-modify-private user-read-recently-played playlist-read-private user-top-read',
                         requests_timeout=10)
