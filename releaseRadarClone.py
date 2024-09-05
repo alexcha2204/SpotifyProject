@@ -100,26 +100,17 @@ def upload_music_data_locally(sp: spotipy.Spotify, artists_dict: dict, genres_di
 
     csv_filename = f"music_data_{username}.csv"
     genres_json_filename = f"genres_{username}.json"
-    # albums_json_filename = f"albums_{username}.json"
 
     artist_df.to_csv(csv_filename, index=False)
 
     with open(genres_json_filename, 'w') as json_file:
-        json.dump(genres_dict, json_file, indent=4)
-
-    with open("juice_wrld_saved.json", 'w') as json_file:
-        json.dump(songs, json_file, indent=4)
-
-    # with open(albums_json_filename, 'w') as json_file:
-    #     json.dump(albums_dict, json_file, indent=4)
-       
+        json.dump(genres_dict, json_file, indent=4)       
 
 def get_music_data(artists_data: dict, song: dict,  all_songs: dict):
     
     artists = song['track']['artists']
     date_added = datetime.fromisoformat(song['added_at'])
     song_name = song['track']['name']
-    match_name = "Juice WRLD"
 
     if 'album' in song['track'] and song['track']['album']:
         album_name = song['track']['album']['name']
@@ -141,7 +132,7 @@ def get_music_data(artists_data: dict, song: dict,  all_songs: dict):
                 artists_data[artist_name] = artists_data_dictionary(artist_name, artist_id, 
                                                                         date_added, song_name, album_name, album_type,
                                                                         date_added, song_name, album_name, album_type, 
-                                                                        0, 0, 0, 0)
+                                                                        0, 0, 0)
                 
             if artist_name == artists[0]['name']:
                 artists_data[artist_name]["main_songs_count"] += 1
@@ -166,7 +157,7 @@ def get_music_data(artists_data: dict, song: dict,  all_songs: dict):
 def artists_data_dictionary(artist_name: str, artist_id: str, first_added: datetime, first_song: str, 
                             first_album: str, first_album_type: str,last_added: datetime, last_song: str, 
                             last_album: str, last_album_type: str, num_songs_main: int, num_songs_feature: int, 
-                            liked_songs: int,genres_count: int):
+                            liked_songs: int):
     return {
         "artist_name": artist_name,
         "artist_id" : artist_id, 
@@ -180,8 +171,7 @@ def artists_data_dictionary(artist_name: str, artist_id: str, first_added: datet
         "last_album_type": last_album_type,
         "main_songs_count" : num_songs_main, 
         "featured_songs_count" : num_songs_feature, 
-        "liked_songs_count" : liked_songs,
-        "genres_count": genres_count}
+        "liked_songs_count" : liked_songs}
 
 def get_token():
 
@@ -202,6 +192,13 @@ def get_token():
     return token_info
 
 def code_to_be_worked_later():
+     # albums_json_filename = f"albums_{username}.json"
+
+    # with open("juice_wrld_saved.json", 'w') as json_file:
+    #    json.dump(songs, json_file, indent=4)
+
+    # with open(albums_json_filename, 'w') as json_file:
+    #     json.dump(albums_dict, json_file, indent=4)
     # if artist_name not in all_songs and artist_name == match_name:
     #             all_songs[artist_name] = {"id": artist_id, 'songs': {}}
 
