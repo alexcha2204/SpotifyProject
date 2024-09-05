@@ -148,45 +148,6 @@ def get_music_data(artists_data: dict, song: dict,  all_songs: dict):
             else:
                 artists_data[artist_name]["featured_songs_count"] += 1
 
-            # if artist_name not in all_songs and artist_name == match_name:
-            #     all_songs[artist_name] = {"id": artist_id, 'songs': {}}
-
-            #     album_details = {
-            #         "album_name": album_name,
-            #         "album_id": song['track']['album']['id'],
-            #         "release_date": song['track']['album']['release_date'],
-            #         'date_added': date_added.isoformat(),
-            #         "album_songs": []
-            #     }
-
-            #     all_songs[artist_name]['songs'][album_name] = album_details 
-            #     all_songs[artist_name]['songs'][album_name]['album_songs'].append({
-            #         "song_name": song_name,
-            #         'song_id': song['track']['id'],
-            #         "date_added": date_added.isoformat(),
-            #         "explicit": song['track']['explicit']
-            #     })
-
-            # if artist_name == match_name:
-            #     if album_name not in all_songs[artist_name]['songs']:
-            #         all_songs[artist_name]['songs'][album_name] = {
-            #             "release_date": song['track']['album']['release_date'],
-            #             "album_songs": []
-            #         }
-
-            #     if song['track']['album']['id'] not in all_songs[artist_name]['songs'][album_name]:
-            #         all_songs[artist_name]['songs'][album_name][song['track']['album']['id']] = {
-            #             "release_date": song['track']['album']['release_date'],
-            #             "album_songs": []
-            #         }
-
-            #     all_songs[artist_name]['songs'][album_name][song['track']['album']['id']]['album_songs'].append({
-            #         "song_name": song_name,
-            #         'song_id': song['track']['id'],
-            #         "date_added": date_added.isoformat(),
-            #         "explicit": song['track']['explicit']
-            #     })
-
             artists_data[artist_name]["liked_songs_count"] += 1
             
             if date_added > artists_data[artist_name]['last_added']:
@@ -240,6 +201,51 @@ def get_token():
     
     return token_info
 
+def code_to_be_worked_later():
+    # if artist_name not in all_songs and artist_name == match_name:
+    #             all_songs[artist_name] = {"id": artist_id, 'songs': {}}
+
+    #             album_details = {
+    #                 "album_name": album_name,
+    #                 "album_id": song['track']['album']['id'],
+    #                 "release_date": song['track']['album']['release_date'],
+    #                 'date_added': date_added.isoformat(),
+    #                 'is_single': True,
+    #                 "album_songs": []
+    #             }
+
+    #             all_songs[artist_name]['songs'][album_name] = album_details 
+    #             all_songs[artist_name]['songs'][album_name]['album_songs'].append({
+    #                 "song_name": song_name,
+    #                 'song_id': song['track']['id'],
+    #                 "date_added": date_added.isoformat(),
+    #                 "explicit": song['track']['explicit']
+    #             })
+
+    #             if album_name != song_name:
+    #                 all_songs[artist_name]['songs']['is_single'] = False
+
+    #         if artist_name == match_name:
+    #             if album_name not in all_songs[artist_name]['songs']:
+    #                 all_songs[artist_name]['songs'][album_name] = {
+    #                     "release_date": song['track']['album']['release_date'],
+    #                     "album_songs": []
+    #                 }
+
+    #             if song['track']['album']['id'] not in all_songs[artist_name]['songs'][album_name]:
+    #                 all_songs[artist_name]['songs'][album_name][song['track']['album']['id']] = {
+    #                     "release_date": song['track']['album']['release_date'],
+    #                     "album_songs": []
+    #                 }
+
+    #             all_songs[artist_name]['songs'][album_name][song['track']['album']['id']]['album_songs'].append({
+    #                 "song_name": song_name,
+    #                 'song_id': song['track']['id'],
+    #                 "date_added": date_added.isoformat(),
+    #                 "explicit": song['track']['explicit']
+    #             })
+    return None
+
 def get_spotify_username(sp: spotipy.Spotify):
 
     try:
@@ -260,5 +266,3 @@ def create_spotify_oauth():
 
 if __name__ == '__main__':
     spotifyApp.run(debug=True, port=5000)
-
-
