@@ -38,8 +38,11 @@ def release_radar_clone():
         return redirect('/')
 
     sp = spotipy.Spotify(auth=token_info['access_token'])
+    
+    user_info = sp.current_user()
+    username = user_info['id']
+
     artist_data = {}
-    songs = {}
     offset = 0
 
     while True:
@@ -49,7 +52,7 @@ def release_radar_clone():
             for song in liked_songs:
                 local = song['track']['is_local']
                 if not local:
-                    get_music_data(artist_data, song, songs)
+                    get_music_data(artist_data, song)
 
             if len(liked_songs) < BATCH_SIZE:
                 break
@@ -66,10 +69,9 @@ def release_radar_clone():
 
     genres_data = get_genre_mapping(sp, artist_data)
 
-    upload_music_data_locally(sp, artist_data, genres_data, songs)
+    upload_music_data_locally(username, artist_data, genres_data)
     
-    return "IT WORKS"
-
+    return "DATA HAS BEEN UPLOADED LOCALLY"
 
 def get_genre_mapping(sp: spotipy.Spotify, user_data: dict):
 
@@ -92,19 +94,17 @@ def get_genre_mapping(sp: spotipy.Spotify, user_data: dict):
 
     return genres_dict
 
-def upload_music_data_locally(sp: spotipy.Spotify, artists_dict: dict, genres_dict: dict, songs:dict):
+def upload_music_data_locally(username: str, artists_dict: dict, genres_dict: dict):
 
     artist_df = pd.DataFrame.from_dict(artists_dict, orient='index')
-   
-    username = get_spotify_username(sp)
 
-    csv_filename = f"music_data_{username}.csv"
+    artists_data_csv_filename = f"music_data_{username}.csv"
     genres_json_filename = f"genres_{username}.json"
 
-    artist_df.to_csv(csv_filename, index=False)
+    artist_df.to_csv(artists_data_csv_filename, index=False)
 
     with open(genres_json_filename, 'w') as json_file:
-        json.dump(genres_dict, json_file, indent=4)       
+        json.dump(genres_dict, json_file, indent=4)     
 
 def get_music_data(artists_data: dict, song: dict,  all_songs: dict):
     
@@ -242,17 +242,6 @@ def code_to_be_worked_later():
     #                 "explicit": song['track']['explicit']
     #             })
     return None
-
-def get_spotify_username(sp: spotipy.Spotify):
-
-    try:
-        user_info = sp.current_user()
-        username = user_info['id']
-        return username
-    
-    except SpotifyException as e:
-        print(f"Error getting Spotify username: {e}")
-        return None
 
 def create_spotify_oauth():
     return SpotifyOAuth(client_id = "CLIENT_ID",
